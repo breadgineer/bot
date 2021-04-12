@@ -1,0 +1,2 @@
+buyMessage= '{"user": "breadgineer","ticker": "'+ syminfo.ticker +'", "side": "BUY"}'
+sellMessage= '{"user": "breadgineer","ticker": "'+ syminfo.ticker +'", "side": "SELL"}'
