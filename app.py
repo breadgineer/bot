@@ -69,6 +69,8 @@ def sellAmountIsolatedMargin(ticker):
 
 
 @app.route('/')
+def bot():
+    return ':)'
 
 @app.route('/webhook_spot', methods=['POST'])
 def webhook_spot():
