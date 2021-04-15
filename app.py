@@ -3,6 +3,7 @@ from flask import Flask, request, jsonify, render_template
 from binance.client import Client
 from binance.enums import *
 from unicodedata import name
+import requests
 
 app = Flask(__name__)
 
@@ -28,8 +29,9 @@ def orderSpot(client, side, quantity, ticker, order_type=ORDER_TYPE_MARKET):
         print(f"sending order {order_type} - {side} {quantity} {ticker} " )
         order = client.create_order(symbol=ticker, side=side, type=order_type, quantity=quantity)
     except Exception as e:
-        print("an exception occured - {}".format(e))
-        return False
+        error="There was an error with the order - " + str(e)
+        send_message(error)
+        # return False ###### for debugging
     return order
 
 def orderIsolatedMargin(client, side, quantity, ticker, order_type=ORDER_TYPE_MARKET, iso="TRUE"):
@@ -37,8 +39,9 @@ def orderIsolatedMargin(client, side, quantity, ticker, order_type=ORDER_TYPE_MA
         print(f"sending order {order_type} - {side} {quantity} {ticker} " )
         order = client.create_margin_order(symbol=ticker, side=side, type=order_type, quantity=quantity, isIsolated=iso)
     except Exception as e:
-        print("an exception occured - {}".format(e))
-        return False
+        error="There was an error with the order - " + str(e)
+        send_message(error)
+        # return False ###### for debugging
     return order
 
 def buyAmount(client, coin, ticker):
@@ -75,6 +78,15 @@ def sellAmountIsolatedMargin(client,ticker):
     maxSell = round(balanceSell * .995, r)
     return maxSell
 
+def send_message(message):
+    return requests.post(
+        "https://api.mailgun.net/v3/sandboxa9a4e79977d24da59b94080d8e9ace3d.mailgun.org/messages",
+        auth=("api", "d3743a5f880cb69e598d39673ec3c8bc-a09d6718-4c9c0cf4"),
+        data={"from": "Breadhooks <mailgun@sandboxa9a4e79977d24da59b94080d8e9ace3d.mailgun.org>",
+              "to": ["giancarlo.errigo@gmail.com"],
+              "subject": "We've got a problem",
+              "text": f"{message}"})
+
 
 
 @app.route('/')
@@ -97,19 +109,19 @@ def webhook_spot():
         quantity = sellAmount(client, ticker[:-4], ticker)
 
     order_response = orderSpot(client, side, quantity, ticker)
+    ##### for debugging
+    # if order_response:
+    #     return {
+    #         "code": "success",
+    #         "message": "order executed"
+    #     }
+    # else:
+    #     print("order failed")
 
-    if order_response:
-        return {
-            "code": "success",
-            "message": "order executed"
-        }
-    else:
-        print("order failed")
-
-        return {
-            "code": "error",
-            "message": "order failed"
-        }
+    #     return {
+    #         "code": "error",
+    #         "message": "order failed"
+    #     }
 
 @app.route('/webhook_isolated_margin', methods=['POST'])
 def webhook_isolated_margin():
@@ -125,16 +137,17 @@ def webhook_isolated_margin():
         quantity = sellAmountIsolatedMargin(client, ticker)
     print(quantity)
     order_response = orderIsolatedMargin(client, side, quantity, ticker)
+    
+    ##### for debugging
+    # if order_response:
+    #     return {
+    #         "code": "success",
+    #         "message": "order executed"
+    #     }
+    # else:
+    #     print("order failed")
 
-    if order_response:
-        return {
-            "code": "success",
-            "message": "order executed"
-        }
-    else:
-        print("order failed")
-
-        return {
-            "code": "error",
-            "message": "order failed"
-        }
+    #     return {
+    #         "code": "error",
+    #         "message": "order failed"
+    #     }
