@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <link rel="stylesheet" type = "text/css" href="{{ url_for('static', filename='css/styles.css') }}">
+
+        <!-- =====BOX ICONS===== -->
+       
+     
+    </head>
+    <body>
+
+        <main class="l-main">
+            <!--===== HOME =====-->
+            <section class="home bd-grid" id="home">
+                <div class="home__data">
+                    <h1 class="home__title">Breadhooks</h1>
+                    <h2 class="home__sub__title">The <span class="home__title-color">bots</span> are working hard </h2>
+
+                    <a href="#" class="button">Log in</a>
+                </div>
+
+                <div class="home__social">
+                    <a href="" class="home__social-icon"><i class='bx bxl-linkedin'></i></a>
+                    <a href="" class="home__social-icon"><i class='bx bxl-behance' ></i></a>
+                    <a href="" class="home__social-icon"><i class='bx bxl-github' ></i></a>
+                </div>
+
+                <div class="home__img">    
+                    <img src="{{ url_for('static', filename='img/bot.png') }}" alt="">
+                </div>
+            </section>
+
+             <!--===== ABOUT =====-->
+
+        </main>
+
+
+
+        <!--===== MAIN JS =====-->
+        <script type="text/javascript" src="{{ url_for('static', filename='js/main.js')}}"></script>
+    </body>
+</html>

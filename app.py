@@ -2,10 +2,19 @@ import json, config
 from flask import Flask, request, jsonify, render_template
 from binance.client import Client
 from binance.enums import *
+from unicodedata import name
 
 app = Flask(__name__)
 
-client = Client(config.API_KEY, config.API_SECRET)
+breadgineer = Client(config.user_credentials[0]["API"]["key"], config.user_credentials[0]["API"]["secret"])
+david = Client(config.user_credentials[1]["API"]["key"], config.user_credentials[1]["API"]["secret"])
+
+def clientCreator(data):
+    if data["user"]=="breadgineer":
+        client=breadgineer
+    else:
+        client=david
+    return client
 
 def num_of_zeros(n):
     if n<1:
@@ -14,7 +23,7 @@ def num_of_zeros(n):
     else:
         return 0
 
-def orderSpot(side, quantity, ticker, order_type=ORDER_TYPE_MARKET):
+def orderSpot(client, side, quantity, ticker, order_type=ORDER_TYPE_MARKET):
     try:
         print(f"sending order {order_type} - {side} {quantity} {ticker} " )
         order = client.create_order(symbol=ticker, side=side, type=order_type, quantity=quantity)
@@ -23,24 +32,7 @@ def orderSpot(side, quantity, ticker, order_type=ORDER_TYPE_MARKET):
         return False
     return order
 
-def buyAmount(coin, ticker):
-    step = float(client.get_symbol_info(symbol=ticker)["filters"][2]["stepSize"]) # pos in list can change when updated
-    r = num_of_zeros(step)
-    balanceBuy = float(client.get_asset_balance(coin,
-    recvWindow=10000)['free'])
-    close = float(client.get_symbol_ticker(symbol=ticker)['price'])
-    maxBuy = round(balanceBuy / close * .995, r)
-    return maxBuy
-    
-def sellAmount(coin, ticker):
-    step = float(client.get_symbol_info(symbol=ticker)["filters"][2]["stepSize"]) # pos in list can change when updated
-    r = num_of_zeros(step)
-    balanceSell = float(client.get_asset_balance(coin,
-    recvWindow=10000)['free'])
-    maxSell = round(balanceSell * .995, r)
-    return maxSell
-
-def orderIsolatedMargin(side, quantity, ticker, order_type=ORDER_TYPE_MARKET, iso="TRUE"):
+def orderIsolatedMargin(client, side, quantity, ticker, order_type=ORDER_TYPE_MARKET, iso="TRUE"):
     try:
         print(f"sending order {order_type} - {side} {quantity} {ticker} " )
         order = client.create_margin_order(symbol=ticker, side=side, type=order_type, quantity=quantity, isIsolated=iso)
@@ -49,7 +41,24 @@ def orderIsolatedMargin(side, quantity, ticker, order_type=ORDER_TYPE_MARKET, is
         return False
     return order
 
-def buyAmountIsolatedMargin(ticker):
+def buyAmount(client, coin, ticker):
+    step = float(client.get_symbol_info(symbol=ticker)["filters"][2]["stepSize"]) # pos in list can change when updated
+    r = num_of_zeros(step)
+    balanceBuy = float(client.get_asset_balance(coin,
+    recvWindow=10000)['free'])
+    close = float(client.get_symbol_ticker(symbol=ticker)['price'])
+    maxBuy = round(balanceBuy / close * .995, r)
+    return maxBuy
+    
+def sellAmount(client, coin, ticker):
+    step = float(client.get_symbol_info(symbol=ticker)["filters"][2]["stepSize"]) # pos in list can change when updated
+    r = num_of_zeros(step)
+    balanceSell = float(client.get_asset_balance(coin,
+    recvWindow=10000)['free'])
+    maxSell = round(balanceSell * .995, r)
+    return maxSell
+
+def buyAmountIsolatedMargin(client, ticker):
     step = float(client.get_symbol_info(symbol=ticker)["filters"][2]["stepSize"]) # pos in list can change when updated
     r = num_of_zeros(step)
     balanceBuy = float(client.get_isolated_margin_account(symbols=ticker, 
@@ -58,7 +67,7 @@ def buyAmountIsolatedMargin(ticker):
     maxBuy = round(balanceBuy / close * .995, r)
     return maxBuy
     
-def sellAmountIsolatedMargin(ticker):
+def sellAmountIsolatedMargin(client,ticker):
     step = float(client.get_symbol_info(symbol=ticker)["filters"][2]["stepSize"]) # pos in list can change when updated
     r = num_of_zeros(step)
     balanceSell = float(client.get_isolated_margin_account(symbols=ticker,
@@ -70,27 +79,24 @@ def sellAmountIsolatedMargin(ticker):
 
 @app.route('/')
 def bot():
-    return ':)'
+    n=2
+    return render_template('index.html',bots=n)
 
 @app.route('/webhook_spot', methods=['POST'])
 def webhook_spot():
     
     data = json.loads(request.data)
-    
-    if data['user'] != config.WEBHOOK_USER:
-        return {
-            "code": "error",
-            "message": "invalid user"
-        }
-    
+
+    client = clientCreator(data)
     ticker= data.get('ticker')
     side = data.get('side')
+
     if side == "BUY":
-        quantity = buyAmount('USDT', ticker)
+        quantity = buyAmount(client, 'USDT', ticker)
     elif side == "SELL":
-        quantity = sellAmount(ticker[:-4], ticker)
-    print(quantity)
-    order_response = orderSpot(side, quantity, ticker)
+        quantity = sellAmount(client, ticker[:-4], ticker)
+
+    order_response = orderSpot(client, side, quantity, ticker)
 
     if order_response:
         return {
@@ -109,21 +115,16 @@ def webhook_spot():
 def webhook_isolated_margin():
     
     data = json.loads(request.data)
-    
-    if data['user'] != config.WEBHOOK_USER:
-        return {
-            "code": "error",
-            "message": "invalid user"
-        }
-    
-    ticker= data.get('ticker')
+    client = clientCreator(data)
+    ticker = data.get('ticker')
     side = data.get('side')
+
     if side == "BUY":
-        quantity = buyAmountIsolatedMargin(ticker)
+        quantity = buyAmountIsolatedMargin(client, ticker)
     elif side == "SELL":
-        quantity = sellAmountIsolatedMargin(ticker)
+        quantity = sellAmountIsolatedMargin(client, ticker)
     print(quantity)
-    order_response = orderIsolatedMargin(side, quantity, ticker)
+    order_response = orderIsolatedMargin(client, side, quantity, ticker)
 
     if order_response:
         return {
