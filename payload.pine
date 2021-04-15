@@ -1,2 +1,2 @@
-buyMessage= '{"user": "breadgineer","ticker": "'+ syminfo.ticker +'", "side": "BUY"}'
-sellMessage= '{"user": "breadgineer","ticker": "'+ syminfo.ticker +'", "side": "SELL"}'
+buyMessage= '{"ticker": "'+ syminfo.ticker +'", "side": "BUY"}'
+sellMessage= '{"ticker": "'+ syminfo.ticker +'", "side": "SELL"}'
