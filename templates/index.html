@@ -17,7 +17,7 @@
             <section class="home bd-grid" id="home">
                 <div class="home__data">
                     <h1 class="home__title">Breadhooks</h1>
-                    <h2 class="home__sub__title">The <span class="home__title-color">bots</span> are working hard </h2>
+                    <h2 class="home__sub__title">{{eth}}The <span class="home__title-color">bots</span> are working hard </h2>
 
                     <a href="#" class="button">Log in</a>
                 </div>
@@ -41,5 +41,7 @@
 
         <!--===== MAIN JS =====-->
         <script type="text/javascript" src="{{ url_for('static', filename='js/main.js')}}"></script>
+        <script>setInterval(function(){("#content").load("/sys_info.json")},1000)
+</script>
     </body>
 </html>
