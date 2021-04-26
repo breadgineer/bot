@@ -17,11 +17,11 @@ clients = [
     "user_name":"Giancarlo",
     "client":giancarlo
     }
-    # ,
-    # {
-    # "user_name":"David",
-    # "client":david
-    # }
+    ,
+    {
+    "user_name":"David",
+    "client":david
+    }
 ] 
 
 def num_of_zeros(n):
@@ -92,14 +92,7 @@ def sellAmountIsolatedMargin(client,ticker):
 #               "subject": "We've got a problem",
 #               "text": f"The order for {user_name} could not be filled. {message}"})
 
-def streaming_data_process(msg):
-    """
-    Function to process the received messages
-    param msg: input message
-    """
-    global price
-    price = msg['c']
-# Starting the WebSocket
+
 
 @app.route('/')
 def bot():
