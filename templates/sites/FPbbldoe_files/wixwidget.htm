@@ -1,0 +1,143 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"><title>
+	chatbot
+</title><link rel="canonical" href="https://www.virtualspirits.com/vsa-wix/wixwidget.aspx">
+<script type="text/javascript" src="wixwidget_data/wix.js"></script>
+
+<script language="javascript">
+var title_param;
+var referrer_param;
+var url_param;
+var chatisopen=false;
+var mobileversion = false;
+var mobiledevice = false;
+var wixappconsent = true;
+
+// added content policy rules
+function getVSPolicy(){
+wixappconsent = true;
+var policyDetails = Wix.Utils.getCurrentConsentPolicy();
+//console.log(policyDetails);
+//console.log(policyDetails['policy']['essential']);
+//console.log(policyDetails['policy']['functional']);
+//console.log(policyDetails['policy']['analytics']);
+//console.log(policyDetails['policy']['advertising']);
+//console.log(policyDetails['policy']['dataToThirdParty']);
+if (policyDetails['policy']['functional']==false) {wixappconsent=false;}
+if (policyDetails['policy']['analytics']==false) {wixappconsent=false;}
+if (policyDetails['policy']['advertising']==false) {wixappconsent=false;}
+if (policyDetails['policy']['dataToThirdParty']==false) {wixappconsent=false;}
+if (wixappconsent) { 
+document.getElementById('lblContent').style.display="block";
+} else {
+document.getElementById('lblContent').style.display="none";
+}}
+
+Wix.Utils.onConsentPolicyChanged((data)=> {
+//console.log("changepolicy");
+getVSPolicy();
+});
+          
+// getVSPolicy(); // serverside
+
+function getchatparam() {
+ title_param = encodeURI(document.title);
+ referrer_param = document.referrer;
+ url_param = location.href;
+ url_param = url_param.toLowerCase();
+
+ if (referrer_param.indexOf("editor.wix.com") != -1) { chatisopen = true; } // added to stop chat popup on editor pages
+ if (referrer_param.indexOf("/thank-you-chat") != -1) { chatisopen = true; } // added to stop chat popup on thankyou pages
+}
+    
+function checkmobileversion() {
+  try {
+      var deviceType = Wix.Utils.getDeviceType();
+      if (deviceType == "mobile") { mobileversion = true; mobiledevice = true; }
+      } catch (e) {
+      // nothing
+    }
+      // added 26032014 for non mobile website viewed in mobile
+
+try {
+var temp_useragent;
+temp_useragent = navigator.userAgent;
+temp_useragent  = temp_useragent.toLowerCase();
+if (temp_useragent.indexOf('iphone') != -1) { mobiledevice = true; }
+if (temp_useragent.indexOf('blackberry') != -1) { mobiledevice = true; }
+if (temp_useragent.indexOf('mobile') != -1) { mobiledevice = true; }
+        } catch (e) {
+        // nothing
+     }
+}
+</script>
+<style wix-style="">.Title{ font:normal normal normal 50px/1.1em Impact,impact-w01-2010,impact-w02-2010,impact-w10-2010,sans-serif; } .Menu{ font:normal normal normal 15px/1.1em Open Sans,sans-serif; } .Page-title{ font:normal normal normal 25px/1.1em Impact,impact-w01-2010,impact-w02-2010,impact-w10-2010,sans-serif; } .Heading-XL{ font:normal normal normal 60px/1.1em Impact,impact-w01-2010,impact-w02-2010,impact-w10-2010,sans-serif; } .Heading-L{ font:normal normal normal 42px/1.3em Impact,impact-w01-2010,impact-w02-2010,impact-w10-2010,sans-serif; } .Heading-M{ font:normal normal normal 25px/1.2em Impact,impact-w01-2010,impact-w02-2010,impact-w10-2010,sans-serif; } .Heading-S{ font:normal normal bold 30px/1.4em arial,ｍｓ ｐゴシック,ms pgothic,돋움,dotum,helvetica,sans-serif; } .Body-L{ font:normal normal normal 15px/1.4em arial,ｍｓ ｐゴシック,ms pgothic,돋움,dotum,helvetica,sans-serif; } .Body-M{ font:normal normal normal 13px/1.3em Open Sans,sans-serif; } .Body-S{ font:normal normal normal 12px/1.3em Open Sans,sans-serif; } .Body-XS{ font:normal normal normal 11px/1.3em Open Sans,sans-serif; } }</style><link type="text/css" rel="stylesheet" href="wixwidget_data/languages-woff2.css"><style>:focus {
+    outline: none;
+}
+
+.js-focus-visible .focus-visible:focus,
+.js-focus-visible .focus-visible:focus ~ .wixSdkShowFocusOnSibling
+{
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.9), 0 0 1px 2px #3899EC;
+}
+</style><script src="wixwidget_data/focus-visible.js" id="dynamic_script_FOCUS_VISIBLE"></script></head>
+<body ms_positioning="GridLayout" class="js-focus-visible" data-new-gr-c-s-check-loaded="8.882.0" data-gr-ext-installed="">
+<span id="lblContent" style="display: block;">
+<style wix-style="">
+.chatbuttontext {
+color: #FFFFFF;
+}
+.wixbutton, .wixbutton:link, .wixbutton:visited, .wixbutton:active {
+display: inline-block;
+_height:15px; /* need this for ie */
+background-color: #ACD8E2;
+-webkit-border-radius: 10px;
+-moz-border-radius: 10px;
+border-radius: 10px;
+border: 1px solid #ACD8E2;
+-webkit-transition-duration: 0.2s;
+-moz-transition-duration: 0.2s;
+transition-duration: 0.2s;
+-webkit-user-select:none;
+-moz-user-select:none;
+-ms-user-select:none;
+user-select:none;
+-moz-box-shadow: inset 0 1px 0 #eeeeee,1px 1px 2px 0px #333333;
+-webkit-box-shadow: inset 0 1px 0 #eeeeee,1px 1px 2px 0px #333333;
+box-shadow: inset 0 1px 0 #eeeeee,1px 1px 2px 0px #333333;
+}
+.wixbutton:hover, .wixbutton:focus {
+display: inline-block;
+background-color: #ACD8E2;
+border: 1px solid #ACD8E2;
+text-decoration: none;
+}
+</style>
+
+<a href="#" onclick="OpenChat();return false;" class="wixbutton" style="text-decoration: none;">
+<table style="BORDER-COLLAPSE:collapse;" dir="ltr" width="100%" cellspacing="0" cellpadding="0"><tbody><tr><td style="width:100%; height: 55px;" valign="center"><table dir="ltr" width="100%" cellspacing="0" cellpadding="0"><tbody><tr><td style="padding-left:5px;" width="50"><img src="wixwidget_data/agent_chat3.png" style="border: 0px solid #aaaaaa;" height="50"></td><td style="padding-left:5px;"><span class="chatbuttontext" style="font-family: Arial;font-size: 16px;font-weight: bold;text-decoration: none;font-style: normal; text-shadow: 0px 2px 2px rgba(0,0,0,0.2);">Chatta direkt &nbsp;&nbsp;&nbsp;</span><br><span class="chatbuttontext" style="padding-top:5px; font-family: Arial;font-size: 12px;font-weight: bold; text-decoration: none;font-style: normal;">Har du frågor? Klicka här &nbsp;&nbsp;&nbsp;</span></td></tr></tbody></table></td></tr></tbody></table>
+</a>
+<script type="text/javascript">
+getVSPolicy(); 
+getchatparam(); 
+checkmobileversion(); 
+if(mobiledevice==false) { setTimeout('TimedTrigger()',2000); } 
+function TimedTrigger(){
+if(chatisopen==false){
+OpenChat(); 
+}}
+function OpenChat(){
+if (wixappconsent) { 
+chatisopen=true;
+// the following call will open a popup window positioned in the center of the screen
+if(mobiledevice==false) { 
+Wix.openPopup('https://www.virtualspirits.eu/vsa/ce26693-newdesign-vsaenglish.aspx?freebanner=false&referrer=' + referrer_param, 350, 470, {origin: Wix.WindowOrigin.FIXED, placement: Wix.WindowPlacement.BOTTOM_RIGHT});
+ } else {
+window.open('https://www.virtualspirits.eu/vsa/ce26693-newdesign-vsaenglish.aspx?freebanner=false&referrer=' + referrer_param);
+ }
+}}
+</script></span>
+
+
+</body><grammarly-desktop-integration data-grammarly-shadow-root="true"></grammarly-desktop-integration></html>
