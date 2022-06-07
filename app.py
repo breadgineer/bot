@@ -95,7 +95,6 @@ def futures_entry():
 
     quantity_close = close_order_quantity_futures(client, ticker)
     quantity_open = open_order_quantity_futures(client, ticker)
-    print(quantity_close)
     if side == 'BUY':
         if quantity_close != 0:
             reduce = order_futures(client, side, quantity_close, ticker, "true")
