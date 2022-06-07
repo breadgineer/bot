@@ -1,4 +1,7 @@
+import asyncio
 import json, config
+import math
+
 from flask import Flask, request, jsonify, render_template
 from binance.client import Client
 from binance.enums import *
@@ -14,157 +17,106 @@ giancarlo = Client(config.user_credentials[0]["API"]["key"], config.user_credent
 price = 0
 
 
-def delay(sleep_time:int):
+def delay(sleep_time: float):
     def decorator(function):
         @wraps(function)
         def wrapper(*args, **kwargs):
             time.sleep(sleep_time)
-            print(f"Sleeping {sleep_time} seconds")
             return function(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
+
 def num_of_zeros(n):
-    if n<1:
+    if n < 1:
         s = '{:.16f}'.format(n).split('.')[1]
         return 1 + len(s) - len(s.lstrip('0'))
     else:
         return 0
 
-# def orderSpot(client, side, quantity, ticker, user_name, order_type=ORDER_TYPE_MARKET):
-#     try:
-#         print(f"sending order {order_type} - {side} {quantity} {ticker} " )
-#         order = client.create_order(symbol=ticker, side=side, type=order_type, quantity=quantity)
-#         return order
-#     except Exception as e:
-#         error="An error was encountered - " + str(e)
-#         # send_message(error, user_name)
 
-def orderFutures(client, side, quantity, ticker, order_type=ORDER_TYPE_MARKET, iso="TRUE"):
+def order_futures(client, side, quantity, ticker, reduce, order_type=ORDER_TYPE_MARKET, iso="TRUE"):
     try:
-        print(f"sending order {order_type} - {side} {quantity} {ticker} " )
-        order = client.futures_create_order(symbol=ticker, side=side, type=order_type, quantity=quantity)
+        if reduce == 'true':
+            trade_direction = 'SHORT' if side == 'BUY' else 'LONG'
+            print(f"Closing previous {trade_direction} order -  {quantity} {ticker} ")
+        else:
+            trade_direction = 'LONG' if side == 'BUY' else 'SHORT'
+            print(f"sending {trade_direction} order - {quantity} {ticker} ")
+        order = client.futures_create_order(symbol=ticker, side=side, type=order_type, quantity=quantity, reduceOnly=reduce)
         return order
     except Exception as e:
-        error="An error was encountered - " + str(e)
+        error = "An error was encountered - " + str(e)
         # send_message(error,user_name)
 
-def cancelOrderFutures(client, ticker):
-    # try:
-    print(f"cancelling {ticker} order" )
-    order = client.futures_cancel_all_open_orders(symbol=ticker)
-    return order
-    # except Exception as e:
-    #     error="An error was encountered - " + str(e)
-    #     # send_message(error,user_name)
 
-# def buyAmount(client, coin, ticker):
-#     step = float(client.get_symbol_info(symbol=ticker)["filters"][2]["stepSize"]) # pos in list can change when updated
-#     r = num_of_zeros(step)
-#     balanceBuy = float(client.get_asset_balance(coin,
-#     recvWindow=10000)['free'])
-#     close = float(client.get_symbol_ticker(symbol=ticker)['price'])
-#     maxBuy = round(balanceBuy / close * .995, r)
-#     return maxBuy
-    
-# def sellAmount(client, coin, ticker):
-#     step = float(client.get_symbol_info(symbol=ticker)["filters"][2]["stepSize"]) # pos in list can change when updated
-#     r = num_of_zeros(step)
-#     balanceSell = float(client.get_asset_balance(coin,
-#     recvWindow=10000)['free'])
-#     maxSell = round(balanceSell * .995, r)
-#     return maxSell
-
-def buyAmountFutures(client, ticker):
-    step = float(client.get_symbol_info(symbol=ticker)["filters"][2]["stepSize"]) # pos in list can change when updated
+def open_order_quantity_futures(client, ticker):
+    step = float(client.get_symbol_info(symbol=ticker)["filters"][2]["stepSize"])
     r = num_of_zeros(step)
-    balanceBuy = float(client.futures_account_balance(recvWindow=10000)[0]['availableBalance'])
+    total_balances = client.futures_account_balance(recvWindow=10000)
+    for balance in total_balances:
+        if balance['asset'] == 'USDT':
+            balance_buy = float(balance['balance'])
     close = float(client.get_symbol_ticker(symbol=ticker)['price'])
-    maxBuy = round(balanceBuy / close * .995, r)
+    purchase_amount = balance_buy / close * .95
+    if purchase_amount < 0:
+        maxBuy = round(purchase_amount, r)
+    else:
+        maxBuy = float(math.floor(purchase_amount))
+
     return maxBuy
-    
-def sellAmountFutures(client,ticker):
-    step = float(client.get_symbol_info(symbol=ticker)["filters"][2]["stepSize"]) # pos in list can change when updated
-    r = num_of_zeros(step)
-    balanceSell = float(client.futures_account_balance(recvWindow=10000)[0]['availableBalance'])
-    maxSell = round(balanceSell * .995, r)
+
+
+def close_order_quantity_futures(client,ticker):
+    open_positions = client.futures_position_information()
+    for position in open_positions:
+        if ticker == position['symbol']:
+            maxSell = abs(float(position['positionAmt']))
+
     return maxSell
-
-def send_message(message, user_name):
-    return requests.post(
-        "https://api.mailgun.net/v3/sandboxa9a4e79977d24da59b94080d8e9ace3d.mailgun.org/messages",
-        auth=("api", "d3743a5f880cb69e598d39673ec3c8bc-a09d6718-4c9c0cf4"),
-        data={"from": "Breadhooks <mailgun@sandboxa9a4e79977d24da59b94080d8e9ace3d.mailgun.org>",
-              "to": ["giancarlo.errigo@gmail.com"],
-              "subject": "We've got a problem",
-              "text": f"The order for {user_name} could not be filled. {message}"})
-
-
-@app.route('/DLkmvcox') #Laura
-
-def indexL():
-    return render_template('/sites/DLkmvcox.htm')
-
-
-@app.route('/FPbbldoe') #Gianca
-
-def indexG():
-    return render_template('/sites/FPbbldoe.htm')
 
 
 @app.route('/')
 def bot():
     return render_template('index.html')
 
-# @app.route('/webhook_spot', methods=['POST'])
-# def webhook_spot():
 
-#     data = json.loads(request.data)
-
-#     ticker= data.get('ticker')
-#     side = data.get('side')
-
-#     for user_data in clients:
-#         user_name = user_data["user_name"]
-#         client = user_data["client"]
-#         try:
-#             if side == "BUY":
-#                 quantity = buyAmount(client, 'USDT', ticker)
-#             elif side == "SELL":
-#                 quantity = sellAmount(client, ticker[:-4], ticker)
-#             orderSpot(client, side, quantity, ticker, user_name)
-#         except:
-#             continue
-
-@delay(5)
-@app.route('/futures_entry', methods=['POST'])
+@app.route('/futures', methods=['POST'])
 def futures_entry():
 
     data = json.loads(request.data)
-
+    time_delay = data.get('delay') # in s
     ticker = data.get('ticker')
     side = data.get('side')
     client = giancarlo
+    client.futures_change_leverage(symbol=ticker, leverage=1)
 
-    # if side == "BUY":
-    #     quantity = buyAmountFutures(client, ticker)
-    # elif side == "SELL":
-    #     quantity = sellAmountFutures(client, ticker)
-    order_response = orderFutures(client, side, 10, ticker)
-    
-    return order_response
+    quantity_close = close_order_quantity_futures(client, ticker)
+    quantity_open = open_order_quantity_futures(client, ticker)
+    print(quantity_close)
+    if side == 'BUY':
+        if quantity_close != 0:
+            reduce = order_futures(client, side, quantity_close, ticker, "true")
+            time.sleep(time_delay)
+        open = order_futures(client, side, quantity_open, ticker, "false")
 
-@app.route('/futures_exit', methods=['POST'])
-def futures_exit():
+    else:
+        if quantity_close != 0:
+            reduce = order_futures(client, side, quantity_close, ticker, "true")
+            time.sleep(time_delay)
+        open = order_futures(client, side, quantity_open, ticker, "false")
 
-    data = json.loads(request.data)
+    return 'OK'
 
-    ticker = data.get('ticker')
+
+@app.route('/futures_info', methods=['GET'])
+def futures_info():
     client = giancarlo
+    return str(client.futures_position_information())
 
-    order_response = cancelOrderFutures(client, ticker)
-    
-    return order_response
+
 
 # what you neeed to do is add a decorator that delays time
 # then you should have two endpoints. 1 for the Entering trades and another for exiting
