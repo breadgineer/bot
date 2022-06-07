@@ -10,11 +10,22 @@ import requests
 from binance.streams import BinanceSocketManager
 from functools import wraps
 import time
+import logging
+import sys
 
 app = Flask(__name__)
 
+logger = logging.getLogger('POSITION')
+logger.setLevel(logging.INFO)
+
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('[%(asctime)s] %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
 giancarlo = Client(config.user_credentials[0]["API"]["key"], config.user_credentials[0]["API"]["secret"])
-price = 0
+
 
 
 def delay(sleep_time: float):
@@ -41,10 +52,10 @@ def order_futures(client, side, quantity, ticker, reduce, order_type=ORDER_TYPE_
     try:
         if reduce == 'true':
             trade_direction = 'SHORT' if side == 'BUY' else 'LONG'
-            print(f"Closing previous {trade_direction} order -  {quantity} {ticker} ")
+            logger.info(f"Closing previous {trade_direction} order - {quantity} {ticker}")
         else:
             trade_direction = 'LONG' if side == 'BUY' else 'SHORT'
-            print(f"sending {trade_direction} order - {quantity} {ticker} ")
+            logger.info(f"Sending {trade_direction} order - {quantity} {ticker}")
         order = client.futures_create_order(symbol=ticker, side=side, type=order_type, quantity=quantity, reduceOnly=reduce)
         return order
     except Exception as e:
