@@ -1,2 +1,2 @@
-buyMessage= '{"ticker": "'+ syminfo.ticker +'", "side": "BUY"}'
-sellMessage= '{"ticker": "'+ syminfo.ticker +'", "side": "SELL"}'
+longAlertMessage = '{"ticker": "'+ syminfo.ticker +'", "side": "BUY", "delay":"' + alertDelayTime + '"}'
+shortAlertMessage = '{"ticker": "'+ syminfo.ticker +'", "side": "SELL", "delay":"' + alertDelayTime + '"}'

@@ -15,12 +15,16 @@ import sys
 
 app = Flask(__name__)
 
+#diables flask logger
+logging.getLogger('werkzeug').disabled = True
+
 logger = logging.getLogger('POSITION')
 logger.setLevel(logging.INFO)
 
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter('[%(asctime)s] %(message)s')
+#formatter = logging.Formatter('[%(asctime)s] %(levelname)s - %(message)s ') ## development
+formatter = logging.Formatter('[%(levelname)s] %(message)s ') ## deployment
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
@@ -67,10 +71,12 @@ def open_order_quantity_futures(client, ticker):
     step = float(client.get_symbol_info(symbol=ticker)["filters"][2]["stepSize"])
     r = num_of_zeros(step)
     total_balances = client.futures_account_balance(recvWindow=10000)
+
     for balance in total_balances:
         if balance['asset'] == 'USDT':
             balance_buy = float(balance['balance'])
     close = float(client.get_symbol_ticker(symbol=ticker)['price'])
+
     purchase_amount = balance_buy / close * .95
     if purchase_amount < 0:
         maxBuy = round(purchase_amount, r)
@@ -106,26 +112,49 @@ def futures_entry():
 
     quantity_close = close_order_quantity_futures(client, ticker)
     quantity_open = open_order_quantity_futures(client, ticker)
-    if side == 'BUY':
-        if quantity_close != 0:
-            reduce = order_futures(client, side, quantity_close, ticker, "true")
-            time.sleep(time_delay)
-        open = order_futures(client, side, quantity_open, ticker, "false")
 
+    if quantity_close != 0:
+        reduce = order_futures(client, side, quantity_close, ticker, "true")
+
+        if str(reduce) == "None":
+            logger.warning("Previous position reduction failed to fill")
+        else:
+            reduce_order_time = reduce["updateTime"]
+            reduce_order_average_price = client.futures_aggregate_trades(symbol=ticker, startTime=reduce_order_time)[0]['p']
+            logger.info(f"Order filled at an average price of {reduce_order_average_price} USDT")
+        time.sleep(time_delay)
     else:
-        if quantity_close != 0:
-            reduce = order_futures(client, side, quantity_close, ticker, "true")
-            time.sleep(time_delay)
-        open = order_futures(client, side, quantity_open, ticker, "false")
+        logger.info(f"No open positions. Opening an order...")
+
+    open = order_futures(client, side, quantity_open, ticker, "false")
+
+    if str(open) == "None":
+        logger.warning("New position failed to fill")
+    else:
+        open_order_time = open["updateTime"]
+        open_order_average_price = client.futures_aggregate_trades(symbol=ticker, startTime=open_order_time)[0]['p']
+        logger.info(f"Order filled at an average price of {open_order_average_price} USDT")
 
     return 'OK'
 
 
-@app.route('/futures_info', methods=['GET'])
-def futures_info():
+@app.route('/futures_test', methods=['POST'])
+def futures_test():
+    data = json.loads(request.data)
+    time_delay = data.get('delay') # in s
+    ticker = data.get('ticker')
+    side = data.get('side')
     client = giancarlo
-    return str(client.futures_position_information())
+    client.futures_change_leverage(symbol=ticker, leverage=1)
+    order = client.create_test_order(symbol=ticker, side=side, type=ORDER_TYPE_MARKET, quantity=100)
+    if str(order) == "None":
+        logger.warning("New position failed to fill")
+        order = str(order)
+    else:
+        average_price_open = 1#round(float(order["avgPrice"]), 2)
+        logger.info(f"Order filled at an average price of {average_price_open} USDT")
 
+    return client.create_test_order(symbol=ticker, side=side, type=ORDER_TYPE_MARKET, quantity=100)
 
 
 # what you neeed to do is add a decorator that delays time
