@@ -30,27 +30,12 @@ logger.addHandler(handler)
 
 giancarlo = Client(config.user_credentials[0]["API"]["key"], config.user_credentials[0]["API"]["secret"])
 
-
-
-def delay(sleep_time: float):
-    def decorator(function):
-        @wraps(function)
-        def wrapper(*args, **kwargs):
-            time.sleep(sleep_time)
-            return function(*args, **kwargs)
-
-        return wrapper
-
-    return decorator
-
-
 def num_of_zeros(n):
     if n < 1:
         s = '{:.16f}'.format(n).split('.')[1]
         return 1 + len(s) - len(s.lstrip('0'))
     else:
         return 0
-
 
 def order_futures(client, side, quantity, ticker, reduce, order_type=ORDER_TYPE_MARKET, iso="TRUE"):
     try:
@@ -78,21 +63,21 @@ def open_order_quantity_futures(client, ticker):
     close = float(client.get_symbol_ticker(symbol=ticker)['price'])
 
     purchase_amount = balance_buy / close * .95
-    if purchase_amount < 0:
-        maxBuy = round(purchase_amount, r)
+    if purchase_amount < 1:
+        max_buy = round(purchase_amount, r - 1)
     else:
-        maxBuy = float(math.floor(purchase_amount))
+        max_buy = float(math.floor(purchase_amount))
 
-    return maxBuy
+    return max_buy
 
 
 def close_order_quantity_futures(client,ticker):
     open_positions = client.futures_position_information()
     for position in open_positions:
         if ticker == position['symbol']:
-            maxSell = abs(float(position['positionAmt']))
+            max_sell = abs(float(position['positionAmt']))
 
-    return maxSell
+    return max_sell
 
 
 @app.route('/')
@@ -118,10 +103,12 @@ def futures_entry():
 
         if str(reduce) == "None":
             logger.warning("Previous position reduction failed to fill")
+            return 'ORDER FAILED TO FILL'
         else:
             reduce_order_time = reduce["updateTime"]
             reduce_order_average_price = client.futures_aggregate_trades(symbol=ticker, startTime=reduce_order_time)[0]['p']
             logger.info(f"Order filled at an average price of {reduce_order_average_price} USDT")
+
         time.sleep(time_delay)
     else:
         logger.info(f"No open positions. Opening an order...")
@@ -130,33 +117,15 @@ def futures_entry():
 
     if str(open) == "None":
         logger.warning("New position failed to fill")
+        return 'ORDER FAILED TO FILL'
     else:
         open_order_time = open["updateTime"]
         open_order_average_price = client.futures_aggregate_trades(symbol=ticker, startTime=open_order_time)[0]['p']
         logger.info(f"Order filled at an average price of {open_order_average_price} USDT")
+        return 'ORDERS FILLED SUCCESSFULLY'
 
-    return 'OK'
 
 
-@app.route('/futures_test', methods=['POST'])
+@app.route('/test', methods=['GET'])
 def futures_test():
-    data = json.loads(request.data)
-    time_delay = data.get('delay') # in s
-    ticker = data.get('ticker')
-    side = data.get('side')
-    client = giancarlo
-    client.futures_change_leverage(symbol=ticker, leverage=1)
-    order = client.create_test_order(symbol=ticker, side=side, type=ORDER_TYPE_MARKET, quantity=100)
-    if str(order) == "None":
-        logger.warning("New position failed to fill")
-        order = str(order)
-    else:
-        average_price_open = 1#round(float(order["avgPrice"]), 2)
-        logger.info(f"Order filled at an average price of {average_price_open} USDT")
-
-    return client.create_test_order(symbol=ticker, side=side, type=ORDER_TYPE_MARKET, quantity=100)
-
-
-# what you neeed to do is add a decorator that delays time
-# then you should have two endpoints. 1 for the Entering trades and another for exiting
-# Emtering always has a delay, exiting is immediate
+    return "PING!"
