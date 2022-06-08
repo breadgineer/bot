@@ -1,8 +1,8 @@
 user_credentials = [
     {"user":"giancarlo",
     "API":{
-        "key":"9lODJuoK3YGdYS8ncZ3x862NOAAxg9FCgJZ4DedIMTerts3i6LapalIV80YPcVDX",
-        "secret":"xUr7jNN0FENEkBB9TJFGbGTyruRTaKVaBCdVKNfCnvh4DcbbUceh4dY0yF2hadaW"
+        "key":"9usTn9qt8EJ5yg05vfbn1W8rtBXCxbXbHwoABvZlOL1FbxrxAVFdKRn9BBYJE3t3",
+        "secret":"DP9GUkPqWgPLKKnGZZPBDq7xX1PUXfNKpvBvsK1n2dVmeXkqxpCsqqhmsDhrdNkt"
         }
     }
 ]
