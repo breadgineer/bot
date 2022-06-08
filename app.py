@@ -89,7 +89,7 @@ def bot():
 def futures_entry():
 
     data = json.loads(request.data)
-    time_delay = data.get('delay') # in s
+    time_delay = float(data.get('delay'))
     ticker = data.get('ticker')
     side = data.get('side')
     client = giancarlo
