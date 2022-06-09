@@ -131,7 +131,7 @@ def futures_entry():
 def futures_test():
     return "PING!"
 
-@app.route('/test_futures', methods=['GET'])
+@app.route('/futures_dev', methods=['GET'])
 def futures_dev():
 
     data = json.loads(request.data)
@@ -140,3 +140,6 @@ def futures_dev():
     side = data.get('side')
     client = giancarlo
     client.futures_change_leverage(symbol=ticker, leverage=1)
+    a = client.futures_account()['positions']
+    # find the ticker, if its more than 0 and the side was the same as the one before... that;s your condition
+    return str(a)
