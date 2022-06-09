@@ -15,6 +15,7 @@ import sys
 
 app = Flask(__name__)
 
+
 #diables flask logger
 logging.getLogger('werkzeug').disabled = True
 
@@ -129,3 +130,13 @@ def futures_entry():
 @app.route('/test', methods=['GET'])
 def futures_test():
     return "PING!"
+
+@app.route('/test_futures', methods=['GET'])
+def futures_dev():
+
+    data = json.loads(request.data)
+    time_delay = float(data.get('delay'))
+    ticker = data.get('ticker')
+    side = data.get('side')
+    client = giancarlo
+    client.futures_change_leverage(symbol=ticker, leverage=1)
