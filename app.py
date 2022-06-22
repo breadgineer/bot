@@ -106,6 +106,7 @@ def futures_entry():
                 logger.info(f"Order filled at an average price of {reduce_order_average_price} USDT")
                 return 'ORDER FILLED SUCCESSFULLY'
         else:
+            logger.warning("No open orders, nothing to reduce")
             return 'NO OPEN ORDERS. NOTHING TO REDUCE'
 
     if action == "OPEN":
