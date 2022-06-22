@@ -1,21 +1,16 @@
-import asyncio
 import json, config
 import math
 
 from flask import Flask, request, jsonify, render_template
 from binance.client import Client
 from binance.enums import *
-from unicodedata import name
-import requests
-from binance.streams import BinanceSocketManager
-from functools import wraps
-import time
+
 import logging
 import sys
 
 app = Flask(__name__)
 
-#diables flask logger
+# diables flask logger
 logging.getLogger('werkzeug').disabled = True
 
 logger = logging.getLogger('POSITION')
@@ -23,12 +18,13 @@ logger.setLevel(logging.INFO)
 
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.DEBUG)
-#formatter = logging.Formatter('[%(asctime)s] %(levelname)s - %(message)s ') ## development
-formatter = logging.Formatter('[%(levelname)s] %(message)s ') ## deployment
+# formatter = logging.Formatter('[%(asctime)s] %(levelname)s - %(message)s ') ## development
+formatter = logging.Formatter('[%(levelname)s] %(message)s ')  ## deployment
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 giancarlo = Client(config.user_credentials[0]["API"]["key"], config.user_credentials[0]["API"]["secret"])
+
 
 def num_of_zeros(n):
     if n < 1:
@@ -37,15 +33,17 @@ def num_of_zeros(n):
     else:
         return 0
 
+
 def order_futures(client, side, quantity, ticker, reduce, order_type=ORDER_TYPE_MARKET, iso="TRUE"):
     try:
         if reduce == 'true':
-            trade_direction = 'SHORT' if side == 'BUY' else 'LONG'
+            trade_direction = 'SHORT' if side == 'SELL' else 'LONG'
             logger.info(f"Closing previous {trade_direction} order - {quantity} {ticker}")
         else:
             trade_direction = 'LONG' if side == 'BUY' else 'SHORT'
             logger.info(f"Sending {trade_direction} order - {quantity} {ticker}")
-        order = client.futures_create_order(symbol=ticker, side=side, type=order_type, quantity=quantity, reduceOnly=reduce)
+        order = client.futures_create_order(symbol=ticker, side=side, type=order_type, quantity=quantity,
+                                            reduceOnly=reduce)
         return order
     except Exception as e:
         error = "An error was encountered - " + str(e)
@@ -71,7 +69,7 @@ def open_order_quantity_futures(client, ticker):
     return max_buy
 
 
-def close_order_quantity_futures(client,ticker):
+def close_order_quantity_futures(client, ticker):
     open_positions = client.futures_position_information()
     for position in open_positions:
         if ticker == position['symbol']:
@@ -87,43 +85,41 @@ def bot():
 
 @app.route('/futures', methods=['POST'])
 def futures_entry():
-
     data = json.loads(request.data)
-    time_delay = float(data.get('delay'))
     ticker = data.get('ticker')
     side = data.get('side')
+    action = data.get('action')
     client = giancarlo
     client.futures_change_leverage(symbol=ticker, leverage=1)
 
-    quantity_close = close_order_quantity_futures(client, ticker)
-    quantity_open = open_order_quantity_futures(client, ticker)
+    if action == "CLOSE":
+        quantity_close = close_order_quantity_futures(client, ticker)
+        if quantity_close != 0:
+            reduce = order_futures(client, side, quantity_close, ticker, "true")
 
-    if quantity_close != 0:
-        reduce = order_futures(client, side, quantity_close, ticker, "true")
+            if str(reduce) == "None":
+                logger.warning("Previous position reduction failed to fill")
+                return 'ORDER FAILED TO FILL'
+            else:
+                reduce_order_time = reduce["updateTime"]
+                reduce_order_average_price = client.futures_aggregate_trades(symbol=ticker, startTime=reduce_order_time)[0]['p']
+                logger.info(f"Order filled at an average price of {reduce_order_average_price} USDT")
+                return 'ORDER FILLED SUCCESSFULLY'
+        else:
+            return 'NO OPEN ORDERS. NOTHING TO REDUCE'
 
-        if str(reduce) == "None":
-            logger.warning("Previous position reduction failed to fill")
+    if action == "OPEN":
+        quantity_open = open_order_quantity_futures(client, ticker)
+        open = order_futures(client, side, quantity_open, ticker, "false")
+
+        if str(open) == "None":
+            logger.warning("New position failed to fill")
             return 'ORDER FAILED TO FILL'
         else:
-            reduce_order_time = reduce["updateTime"]
-            reduce_order_average_price = client.futures_aggregate_trades(symbol=ticker, startTime=reduce_order_time)[0]['p']
-            logger.info(f"Order filled at an average price of {reduce_order_average_price} USDT")
-
-        time.sleep(time_delay)
-    else:
-        logger.info(f"No open positions. Opening an order...")
-
-    open = order_futures(client, side, quantity_open, ticker, "false")
-
-    if str(open) == "None":
-        logger.warning("New position failed to fill")
-        return 'ORDER FAILED TO FILL'
-    else:
-        open_order_time = open["updateTime"]
-        open_order_average_price = client.futures_aggregate_trades(symbol=ticker, startTime=open_order_time)[0]['p']
-        logger.info(f"Order filled at an average price of {open_order_average_price} USDT")
-        return 'ORDERS FILLED SUCCESSFULLY'
-
+            open_order_time = open["updateTime"]
+            open_order_average_price = client.futures_aggregate_trades(symbol=ticker, startTime=open_order_time)[0]['p']
+            logger.info(f"Order filled at an average price of {open_order_average_price} USDT")
+            return 'ORDER FILLED SUCCESSFULLY'
 
 
 @app.route('/test', methods=['GET'])
