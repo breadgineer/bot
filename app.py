@@ -11,14 +11,14 @@ import sys
 app = Flask(__name__)
 
 # diables flask logger
-logging.getLogger('werkzeug').disabled = True
+# logging.getLogger('werkzeug').disabled = True
 
 logger = logging.getLogger('POSITION')
 logger.setLevel(logging.INFO)
 
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.DEBUG)
-# formatter = logging.Formatter('[%(asctime)s] %(levelname)s - %(message)s ') ## development
+# formatter = logging.Formatter('[%(asctime)s] %(levelname)s - %(message)s ')  ## development
 formatter = logging.Formatter('[%(levelname)s] %(message)s ')  ## deployment
 handler.setFormatter(formatter)
 logger.addHandler(handler)
@@ -29,7 +29,7 @@ giancarlo = Client(config.user_credentials[0]["API"]["key"], config.user_credent
 def num_of_zeros(n):
     if n < 1:
         s = '{:.16f}'.format(n).split('.')[1]
-        return 1 + len(s) - len(s.lstrip('0'))
+        return len(s) - len(s.lstrip('0'))
     else:
         return 0
 
@@ -37,7 +37,7 @@ def num_of_zeros(n):
 def order_futures(client, side, quantity, ticker, reduce, order_type=ORDER_TYPE_MARKET, iso="TRUE"):
     try:
         if reduce == 'true':
-            trade_direction = 'SHORT' if side == 'SELL' else 'LONG'
+            trade_direction = 'SHORT' if side == 'BUY' else 'LONG'
             logger.info(f"Closing previous {trade_direction} order - {quantity} {ticker}")
         else:
             trade_direction = 'LONG' if side == 'BUY' else 'SHORT'
@@ -93,9 +93,10 @@ def futures_entry():
     client.futures_change_leverage(symbol=ticker, leverage=1)
 
     if action == "CLOSE":
+        reduction_side = 'BUY' if side == 'SELL' else 'SELL'
         quantity_close = close_order_quantity_futures(client, ticker)
         if quantity_close != 0:
-            reduce = order_futures(client, side, quantity_close, ticker, "true")
+            reduce = order_futures(client, reduction_side, quantity_close, ticker, "true")
 
             if str(reduce) == "None":
                 logger.warning("Previous position reduction failed to fill")
